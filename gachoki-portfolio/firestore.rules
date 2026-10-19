@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// Who can do what:
+//  - Anyone can READ the public content (projects, press, gallery, settings).
+//  - Anyone can SEND a contact message (create only, size-limited). Only admins can read or delete them.
+//  - Only administrators can change content. An administrator is a signed-in user
+//    that has a document in the "admins" collection whose ID is their user ID.
+//    That collection can only be edited in the Firebase console, never from the website.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /{collection}/{id} {
+      allow read: if collection in ['projects', 'press', 'gallery'];
+      allow write: if isAdmin() && collection in ['projects', 'press', 'gallery'];
+    }
+
+    match /messages/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'email', 'ward', 'topic', 'message', 'read', 'createdAt', 'sentAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 120
+        && request.resource.data.email is string && request.resource.data.email.size() <= 160
+        && request.resource.data.message is string && request.resource.data.message.size() >= 5 && request.resource.data.message.size() <= 3000
+        && request.resource.data.read == false;
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
