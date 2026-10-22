@@ -101,11 +101,11 @@ function Dashboard({ user, onSignOut }) {
         <Routes>
           <Route index element={<Overview />} />
           <Route path="work" element={
-            <Crud name="projects" title="Selected work" intro="Projects and legislation. Use the arrows to choose the order; the first four appear on the Profile page." singular="project" fields={workFields} sortable samples={SAMPLE_PROJECTS}
+            <Crud name="projects" title="Selected work" intro="Projects and legislation. Use the arrows to choose the order; the first four appear on the Profile page." singular="project" fields={workFields} sortable importable samples={SAMPLE_PROJECTS}
               describe={(p) => ({ title: p.title, sub: [p.category, p.place, p.year].filter(Boolean).join(" · "), image: p.image })} />
           } />
           <Route path="press" element={
-            <Crud name="press" title="Press" intro="Newest first. Paste the link to the original so visitors can read it at the source." singular="press item" fields={pressFields} samples={SAMPLE_PRESS}
+            <Crud name="press" title="Press" intro="Newest first. Paste the link to the original so visitors can read it at the source." singular="press item" fields={pressFields} importable samples={SAMPLE_PRESS}
               describe={(n) => ({ title: n.title, sub: [n.kind, n.outlet, formatDate(n.date)].filter(Boolean).join(" · "), image: n.image })} />
           } />
           <Route path="gallery" element={

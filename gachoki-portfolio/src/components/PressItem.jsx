@@ -4,7 +4,7 @@ import { formatDate } from "../lib/format";
 function PressItem({ item: n }) {
   const body = (
     <>
-      <Photo src={n.image} label="PRESS IMAGE" alt="" className="press-thumb" />
+      {n.image && <Photo src={n.image} alt="" className="press-thumb" />}
       <div>
         <div className="kicker">{[n.kind, n.outlet, formatDate(n.date)].filter(Boolean).join(" · ").toUpperCase()}</div>
         <h3>{n.title}</h3>

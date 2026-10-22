@@ -26,6 +26,11 @@ Without Firebase the site shows sample content, so every page can be previewed.
 - **Profile and career**: name, title, current position, opening sentence, portrait, wide photo and quote, headline numbers, career, education, committees, vision, contact, colours.
 - **Messages**: contact form submissions.
 
+**Import from file** (Selected work and Press): load many records at once from a `.json` or `.csv` file.
+`content/gachoki-content.json` holds researched projects and press coverage with source links; import it on each screen.
+For your own lists, click **CSV template**, fill it in Excel (one row per item, dates as 2025-09-15 or 15/09/2025),
+save as "CSV UTF-8" and import. Items whose title is already listed are skipped, so importing twice is safe.
+
 Photos are shrunk in the browser and stored in the database (no paid storage needed).
 
 ## 3. Before going live

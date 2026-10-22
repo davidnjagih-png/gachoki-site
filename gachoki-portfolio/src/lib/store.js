@@ -43,6 +43,17 @@ export async function seedSamples(name, items) {
   await batch.commit();
 }
 
+// Add many records at once, keeping the file's order after anything already listed.
+export async function importItems(name, items, startOrder = 0) {
+  for (let s = 0; s < items.length; s += 400) {
+    const batch = writeBatch(db);
+    items.slice(s, s + 400).forEach((item, i) => {
+      batch.set(doc(collection(db, name)), { ...item, order: startOrder + s + i, createdAt: Date.now() - (s + i) });
+    });
+    await batch.commit();
+  }
+}
+
 export async function sendMessage(message) {
   await addDoc(collection(db, "messages"), {
     ...message,

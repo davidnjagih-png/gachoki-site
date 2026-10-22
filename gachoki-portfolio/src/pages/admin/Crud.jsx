@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useContent } from "../../lib/contentContext";
-import { removeItem, saveItem, saveOrder, seedSamples } from "../../lib/store";
+import { importItems, removeItem, saveItem, saveOrder, seedSamples } from "../../lib/store";
+import { cleanRecords, csvTemplate, readImportFile } from "../../lib/importer";
 import ImageField from "./ImageField";
 import { compressImage } from "../../lib/image";
 
@@ -8,7 +9,7 @@ import { compressImage } from "../../lib/image";
   A generic add / edit / delete / reorder screen, used for achievements,
   news, events and the gallery. Each screen only describes its fields.
 */
-function Crud({ name, title, intro, fields, describe, sortable = false, samples = [], singular = "item", bulk = null }) {
+function Crud({ name, title, intro, fields, describe, sortable = false, samples = [], singular = "item", bulk = null, importable = false }) {
   const content = useContent();
   const items = content[name];
   const [editing, setEditing] = useState(null); // null | item object (id may be undefined)
@@ -80,6 +81,48 @@ function Crud({ name, title, intro, fields, describe, sortable = false, samples 
     setBusy(false);
   }
 
+  // Import: load many records from a .json or .csv file. Titles already listed are skipped.
+  async function onImport(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setError("");
+    setProgress("");
+    try {
+      const records = cleanRecords(await readImportFile(file, name), fields);
+      const seen = new Set(items.map((i) => String(i.title || "").trim().toLowerCase()));
+      const fresh = records.filter((r) => {
+        const key = r.title.trim().toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      const skipped = records.length - fresh.length;
+      if (!fresh.length) {
+        setProgress(records.length ? `Nothing new: all ${records.length} are already listed.` : "No usable records found in that file.");
+        return;
+      }
+      const note = skipped ? ` (${skipped} already listed will be skipped)` : "";
+      if (!window.confirm(`Add ${fresh.length} ${singular}${fresh.length === 1 ? "" : "s"} from ${file.name}${note}?`)) return;
+      setBusy(true);
+      const start = Math.max(-1, ...items.map((i) => i.order ?? 0)) + 1;
+      await importItems(name, fresh, start);
+      setProgress(`Added ${fresh.length} ${singular}${fresh.length === 1 ? "" : "s"}. Open each one to add a photo.`);
+    } catch (err) {
+      setError(err.message || "Could not import that file.");
+    }
+    setBusy(false);
+  }
+
+  function downloadTemplate() {
+    const url = URL.createObjectURL(new Blob([csvTemplate(fields)], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${name}-template.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const set = (key, value) => setEditing((cur) => ({ ...cur, [key]: value }));
 
   return (
@@ -96,6 +139,15 @@ function Crud({ name, title, intro, fields, describe, sortable = false, samples 
                 {busy ? "Uploading..." : "Upload several photos"}
                 <input type="file" accept="image/*" multiple hidden disabled={busy} onChange={onBulk} />
               </label>
+            )}
+            {importable && (
+              <>
+                <label className="admin-btn" aria-disabled={busy}>
+                  {busy ? "Importing..." : "Import from file"}
+                  <input type="file" accept=".json,.csv,application/json,text/csv" hidden disabled={busy} onChange={onImport} />
+                </label>
+                <button className="admin-btn" type="button" onClick={downloadTemplate}>CSV template</button>
+              </>
             )}
             <button className="admin-btn" onClick={() => setEditing(blank())}>+ Add {singular}</button>
           </div>
